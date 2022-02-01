@@ -1,3 +1,7 @@
+use crossterm::{
+    queue,
+    style::{Color, Print, ResetColor, SetForegroundColor},
+};
 use std::{
     env, fs,
     io::{self, stdin, stdout, Write},
@@ -5,14 +9,10 @@ use std::{
     process::Command,
 };
 
-use crossterm::{
-    queue,
-    style::{Color, Print, ResetColor, SetForegroundColor},
-};
-
 fn main() -> io::Result<()> {
     loop {
         let dir = {
+            //TODO: WTF is this?
             let home = home::home_dir().unwrap().to_string_lossy().to_string();
             let current_dir = env::current_dir()?
                 .as_os_str()
@@ -56,7 +56,12 @@ fn main() -> io::Result<()> {
                 }
                 println!();
             }
-            "clear" | "cls" => stdout().flush()?,
+            "clear" | "cls" => {
+                Command::new("cmd")
+                    .args(["/C", "cls"])
+                    .status()
+                    .expect("failed to execute process");
+            }
             "exit" | "quit" => return Ok(()),
             command => {
                 let child = Command::new(command).args(args).spawn();
