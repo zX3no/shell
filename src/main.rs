@@ -8,17 +8,22 @@ use std::{
     path::Path,
     process::Command,
 };
+#[macro_use]
+extern crate lazy_static;
+
+lazy_static! {
+    static ref HOME: String = home::home_dir().unwrap().to_string_lossy().to_string();
+}
 
 fn main() -> io::Result<()> {
     loop {
         let dir = {
             //TODO: WTF is this?
-            let home = home::home_dir().unwrap().to_string_lossy().to_string();
             let current_dir = env::current_dir()?
                 .as_os_str()
                 .to_string_lossy()
                 .to_string();
-            current_dir.replace(&home, "~")
+            current_dir.replace(HOME.as_str(), "~")
         };
         queue!(
             stdout(),
@@ -41,11 +46,12 @@ fn main() -> io::Result<()> {
 
         match command {
             "cd" => {
-                // default to '/' as new directory if one was not provided
-                let new_dir = args.peekable().peek().map_or("/", |x| *x);
-                let root = Path::new(new_dir);
-                if let Err(e) = env::set_current_dir(&root) {
-                    eprintln!("{}", e);
+                if let Some(new_dir) = args.peekable().peek() {
+                    let new_dir = new_dir.replace('~', HOME.as_str());
+                    let root = Path::new(&new_dir);
+                    if let Err(e) = env::set_current_dir(&root) {
+                        eprintln!("{}", e);
+                    }
                 }
             }
             "ls" => {
